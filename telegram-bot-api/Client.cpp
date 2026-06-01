@@ -8758,12 +8758,16 @@ void Client::on_update_authorization_state() {
             auto proxy_port = td::to_integer<td::int32>(hostport.substr(colon + 1));
             LOG(WARNING) << "TG_PROXY enabled -> " << proxy_host << ":" << proxy_port << (is_http ? " (http)" : " (socks5)");
             if (is_http) {
-              send_request(make_object<td_api::addProxy>(proxy_host, proxy_port, true,
-                                                         make_object<td_api::proxyTypeHttp>("", "", false)),
+              send_request(make_object<td_api::addProxy>(
+                               make_object<td_api::proxy>(proxy_host, proxy_port,
+                                                          make_object<td_api::proxyTypeHttp>("", "", false)),
+                               true, td::string()),
                            td::make_unique<TdOnOkCallback>());
             } else {
-              send_request(make_object<td_api::addProxy>(proxy_host, proxy_port, true,
-                                                         make_object<td_api::proxyTypeSocks5>("", "")),
+              send_request(make_object<td_api::addProxy>(
+                               make_object<td_api::proxy>(proxy_host, proxy_port,
+                                                          make_object<td_api::proxyTypeSocks5>("", "")),
+                               true, td::string()),
                            td::make_unique<TdOnOkCallback>());
             }
           }

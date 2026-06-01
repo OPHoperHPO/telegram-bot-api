@@ -11,6 +11,8 @@ COPY . .
 ARG JOBS=4
 RUN mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
+          -DOPENSSL_USE_STATIC_LIBS=TRUE \
+          -DZLIB_USE_STATIC_LIBS=TRUE \
           -DCMAKE_EXE_LINKER_FLAGS="-static" \
           -DCMAKE_INSTALL_PREFIX=/out .. && \
     cmake --build . --target install -j"${JOBS}"

@@ -8744,7 +8744,33 @@ void Client::on_update_authorization_state() {
       request->device_model_ = "server";
       request->application_version_ = parameters_->version_;
 
-      return send_request(std::move(request), td::make_unique<TdOnInitCallback>(this));
+      send_request(std::move(request), td::make_unique<TdOnInitCallback>(this));
+      {
+        const char *tg_proxy = std::getenv("TG_PROXY");
+        if (tg_proxy != nullptr && tg_proxy[0] != '\0') {
+          td::string purl(tg_proxy);
+          bool is_http = purl.find("http://") == 0;
+          auto scheme_pos = purl.find("://");
+          td::string hostport = (scheme_pos == td::string::npos) ? purl : purl.substr(scheme_pos + 3);
+          auto colon = hostport.rfind(':');
+          if (colon != td::string::npos) {
+            td::string proxy_host = hostport.substr(0, colon);
+            auto proxy_port = td::to_integer<td::int32>(hostport.substr(colon + 1));
+            LOG(WARNING) << "TG_PROXY enabled -> " << proxy_host << ":" << proxy_port << (is_http ? " (http)" : " (socks5)");
+            if (is_http) {
+              send_request(make_object<td_api::addProxy>(proxy_host, proxy_port, true,
+                                                         make_object<td_api::proxyTypeHttp>("", "", false)),
+                           td::make_unique<TdOnOkCallback>());
+            } else {
+              send_request(make_object<td_api::addProxy>(proxy_host, proxy_port, true,
+                                                         make_object<td_api::proxyTypeSocks5>("", "")),
+                           td::make_unique<TdOnOkCallback>());
+            }
+          }
+        }
+      }
+      return;
+
     }
     case td_api::authorizationStateWaitPhoneNumber::ID:
       send_request(make_object<td_api::setOption>("online", make_object<td_api::optionValueBoolean>(true)),
